@@ -58,10 +58,11 @@ Remplacez `VOTRE-NOM` par votre nom d'utilisateur GitHub.
 2. Connectez le dépôt `soeurs-finds`
 3. Remplissez :
    - **Name** : `soeurs-finds`
-   - **Build Command** : `npm install && npm run build`
+   - **Build Command** : `npm run render:build`
    - **Start Command** : `npm start`
    - **Plan** : **Free**
 4. Dans **Environment Variables**, ajoutez :
+   - `NODE_VERSION` = `20.18.0`
    - `ADMIN_PASSWORD` = un mot de passe que vous choisissez (ex. `MonAdmin2026!`)
 5. Cliquez **Create Web Service**
 

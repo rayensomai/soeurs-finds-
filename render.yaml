@@ -3,10 +3,12 @@ services:
     name: soeurs-finds
     runtime: node
     plan: free
-    buildCommand: npm install && npm run build
+    buildCommand: npm run render:build
     startCommand: npm start
     envVars:
       - key: NODE_ENV
         value: production
+      - key: NODE_VERSION
+        value: 20.18.0
       - key: ADMIN_PASSWORD
         sync: false
