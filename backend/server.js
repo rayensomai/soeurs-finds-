@@ -1,13 +1,20 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
+import { existsSync } from 'fs';
+import { fileURLToPath } from 'url';
 import db from './database.js';
 
 dotenv.config();
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const frontendDist = path.join(__dirname, '..', 'frontend', 'dist');
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
+const SITE_URL = process.env.RENDER_EXTERNAL_URL || process.env.SITE_URL || `http://localhost:${PORT}`;
 
 app.use(cors());
 app.use(express.json());
@@ -199,6 +206,49 @@ app.patch('/api/orders/:id/status', checkAdmin, (req, res) => {
   res.json(order);
 });
 
-app.listen(PORT, () => {
-  console.log(`🌸 Soeurs Finds API → http://localhost:${PORT}`);
+app.get('/api/health', (_req, res) => {
+  res.json({ status: 'ok' });
+});
+
+app.get('/sitemap.xml', (_req, res) => {
+  const categories = db.prepare('SELECT id FROM categories').all();
+  const urls = [
+    '',
+    ...categories.map((c) => `/categorie/${c.id}`),
+  ];
+
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urls
+  .map(
+    (url) => `  <url>
+    <loc>${SITE_URL}${url}</loc>
+    <changefreq>weekly</changefreq>
+  </url>`
+  )
+  .join('\n')}
+</urlset>`;
+
+  res.type('application/xml').send(xml);
+});
+
+app.get('/robots.txt', (_req, res) => {
+  res.type('text/plain').send(`User-agent: *
+Allow: /
+
+Sitemap: ${SITE_URL}/sitemap.xml
+`);
+});
+
+if (existsSync(frontendDist)) {
+  app.use(express.static(frontendDist));
+
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api')) return next();
+    res.sendFile(path.join(frontendDist, 'index.html'));
+  });
+}
+
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Soeurs Finds en ligne → ${SITE_URL}`);
 });
