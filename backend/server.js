@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
-import { existsSync, writeFileSync } from 'fs';
+import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import db, { persistData } from './database.js';
 import { getUploadsDir } from './persistence.js';
@@ -16,7 +16,10 @@ const uploadsDir = getUploadsDir();
 const app = express();
 const PORT = process.env.PORT || 3001;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
-const SITE_URL = process.env.RENDER_EXTERNAL_URL || process.env.SITE_URL || `http://localhost:${PORT}`;
+const SITE_URL =
+  process.env.SITE_URL ||
+  process.env.RENDER_EXTERNAL_URL ||
+  `http://localhost:${PORT}`;
 
 app.use(cors());
 app.use(express.json({ limit: '12mb' }));
@@ -441,17 +444,39 @@ ${urls
 app.get('/robots.txt', (_req, res) => {
   res.type('text/plain').send(`User-agent: *
 Allow: /
+Disallow: /admin
 
 Sitemap: ${SITE_URL}/sitemap.xml
 `);
 });
 
+// Google Search Console — fichier HTML de vérification (racine du site)
+app.get('/google65bc164122289cee.html', (_req, res) => {
+  res.type('text/html; charset=utf-8').send('google-site-verification: google65bc164122289cee.html');
+});
+
+function sendSpaHtml(res) {
+  const indexPath = path.join(frontendDist, 'index.html');
+  let html = readFileSync(indexPath, 'utf-8');
+
+  if (process.env.GOOGLE_SITE_VERIFICATION) {
+    html = html.replace(
+      '</head>',
+      `    <meta name="google-site-verification" content="${process.env.GOOGLE_SITE_VERIFICATION}" />\n  </head>`
+    );
+  }
+
+  res.type('html').send(html);
+}
+
 if (existsSync(frontendDist)) {
-  app.use(express.static(frontendDist));
+  app.use(express.static(frontendDist, { index: false }));
+
+  app.get('/', (_req, res) => sendSpaHtml(res));
 
   app.get('*', (req, res, next) => {
-    if (req.path.startsWith('/api')) return next();
-    res.sendFile(path.join(frontendDist, 'index.html'));
+    if (req.path.startsWith('/api') || req.path.includes('.')) return next();
+    sendSpaHtml(res);
   });
 }
 

@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { fetchCategories, fetchProductsByCategory } from '../api';
 import ProductCard from '../components/ProductCard';
 import OrderModal from '../components/OrderModal';
+import { usePageMeta } from '../usePageMeta';
 
 export default function CategoryPage() {
   const { id } = useParams();
@@ -10,6 +11,15 @@ export default function CategoryPage() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedProduct, setSelectedProduct] = useState(null);
+
+  usePageMeta(
+    category
+      ? {
+          title: `${category.name} — Soeurs Finds | Boutique en ligne Canada`,
+          description: `${category.description || category.name}. Découvrez nos produits ${category.name.toLowerCase()} chez Soeurs Finds. Commandez en ligne au Canada.`,
+        }
+      : {}
+  );
 
   useEffect(() => {
     setLoading(true);

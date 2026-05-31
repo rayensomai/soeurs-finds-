@@ -3,8 +3,15 @@ import { Link } from 'react-router-dom';
 import { fetchCategories, fetchFeaturedProducts } from '../api';
 import ProductCard from '../components/ProductCard';
 import OrderModal from '../components/OrderModal';
+import { usePageMeta } from '../usePageMeta';
 
 export default function HomePage() {
+  usePageMeta({
+    title: 'Soeurs Finds — Boutique en ligne Canada | Vos trouvailles, notre passion',
+    description:
+      'Soeurs Finds — boutique en ligne au Canada. Cuisine, bien-être, lumière, sport, technologie et jardinage. Commandez en ligne, livraison partout au Canada.',
+  });
+
   const [categories, setCategories] = useState([]);
   const [featured, setFeatured] = useState([]);
   const [loading, setLoading] = useState(true);

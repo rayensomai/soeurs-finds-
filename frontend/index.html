@@ -1,18 +1,95 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr-CA">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="/logo.png" />
+    <link rel="icon" type="image/png" href="/logo.png" sizes="any" />
     <link rel="apple-touch-icon" href="/logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Soeurs Finds — Boutique en ligne Canada. Cuisine, bien-être, lumière, sport, technologie et jardinage." />
+    <meta name="application-name" content="Soeurs Finds" />
+    <meta name="description" content="Soeurs Finds — boutique en ligne au Canada. Cuisine, bien-être, lumière, sport, technologie et jardinage. Commandez en ligne, livraison partout au Canada." />
+    <meta name="keywords" content="Soeurs Finds, boutique en ligne, Canada, cuisine, bien-être, technologie, jardinage, Saint-Léonard, Montréal, achats en ligne" />
+    <meta name="author" content="Soeurs Finds" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <meta name="geo.region" content="CA-QC" />
+    <meta name="geo.placename" content="Saint-Léonard" />
+    <link rel="canonical" href="https://soeurs-finder.com/" />
+    <link rel="sitemap" type="application/xml" title="Sitemap" href="/sitemap.xml" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="fr_CA" />
+    <meta property="og:site_name" content="Soeurs Finds" />
+    <meta property="og:title" content="Soeurs Finds — Boutique en ligne Canada" />
+    <meta property="og:description" content="Découvrez nos produits cuisine, bien-être, lumière, sport, technologie et jardinage. Commandez en ligne au Canada." />
+    <meta property="og:url" content="https://soeurs-finder.com/" />
+    <meta property="og:image" content="https://soeurs-finder.com/logo.png" />
+
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Soeurs Finds — Boutique en ligne Canada" />
+    <meta name="twitter:description" content="Découvrez nos produits et commandez en ligne. Livraison partout au Canada." />
+    <meta name="twitter:image" content="https://soeurs-finder.com/logo.png" />
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet" />
-    <title>Soeurs Finds — Vos trouvailles, notre passion</title>
+    <title>Soeurs Finds — Boutique en ligne Canada | Vos trouvailles, notre passion</title>
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebSite",
+          "@id": "https://soeurs-finder.com/#website",
+          "url": "https://soeurs-finder.com",
+          "name": "Soeurs Finds",
+          "description": "Boutique en ligne au Canada — cuisine, bien-être, lumière, sport, technologie et jardinage.",
+          "inLanguage": "fr-CA",
+          "publisher": { "@id": "https://soeurs-finder.com/#organization" }
+        },
+        {
+          "@type": "Organization",
+          "@id": "https://soeurs-finder.com/#organization",
+          "name": "Soeurs Finds",
+          "url": "https://soeurs-finder.com",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://soeurs-finder.com/logo.png"
+          },
+          "sameAs": [
+            "https://www.facebook.com/profile.php?id=61560521294412"
+          ]
+        },
+        {
+          "@type": "Store",
+          "@id": "https://soeurs-finder.com/#store",
+          "name": "Soeurs Finds",
+          "description": "Boutique en ligne au Canada. Commandez cuisine, bien-être, lumière, sport, technologie et jardinage.",
+          "url": "https://soeurs-finder.com",
+          "image": "https://soeurs-finder.com/logo.png",
+          "telephone": "+1-514-601-0010",
+          "address": {
+            "@type": "PostalAddress",
+            "streetAddress": "4949 Métropolitaine",
+            "addressLocality": "Saint-Léonard",
+            "addressRegion": "QC",
+            "postalCode": "H1R 1Z6",
+            "addressCountry": "CA"
+          },
+          "areaServed": { "@type": "Country", "name": "Canada" },
+          "priceRange": "$$",
+          "parentOrganization": { "@id": "https://soeurs-finder.com/#organization" }
+        }
+      ]
+    }
+    </script>
   </head>
   <body>
     <div id="root"></div>
+    <noscript>
+      <h1>Soeurs Finds — Boutique en ligne Canada</h1>
+      <p>Cuisine, bien-être, lumière, sport, technologie et jardinage. Commandez en ligne, livraison partout au Canada.</p>
+      <p>4949 Métropolitaine, Saint-Léonard, QC — (514) 601-0010</p>
+    </noscript>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
