@@ -2,19 +2,16 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
-import { existsSync, mkdirSync, writeFileSync } from 'fs';
+import { existsSync, writeFileSync } from 'fs';
 import { fileURLToPath } from 'url';
-import db from './database.js';
+import db, { persistData } from './database.js';
+import { getUploadsDir } from './persistence.js';
 
 dotenv.config();
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const frontendDist = path.join(__dirname, '..', 'frontend', 'dist');
-const uploadsDir = path.join(__dirname, 'uploads');
-
-if (!existsSync(uploadsDir)) {
-  mkdirSync(uploadsDir, { recursive: true });
-}
+const uploadsDir = getUploadsDir();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -25,11 +22,33 @@ app.use(cors());
 app.use(express.json({ limit: '12mb' }));
 app.use('/uploads', express.static(uploadsDir));
 
+app.use('/api', (req, res, next) => {
+  if (['POST', 'PATCH', 'PUT', 'DELETE'].includes(req.method)) {
+    return saveChanges(req, res, next);
+  }
+  next();
+});
+
 function checkAdmin(req, res, next) {
   const password = req.headers['x-admin-password'];
   if (password !== ADMIN_PASSWORD) {
     return res.status(401).json({ error: 'Accès non autorisé' });
   }
+  next();
+}
+
+function saveChanges(_req, res, next) {
+  const originalJson = res.json.bind(res);
+  res.json = (body) => {
+    if (res.statusCode >= 200 && res.statusCode < 300) {
+      try {
+        persistData();
+      } catch (err) {
+        console.error('Erreur sauvegarde:', err.message);
+      }
+    }
+    return originalJson(body);
+  };
   next();
 }
 
@@ -438,4 +457,14 @@ if (existsSync(frontendDist)) {
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Soeurs Finds en ligne → ${SITE_URL}`);
+});
+
+process.on('SIGINT', () => {
+  persistData();
+  process.exit(0);
+});
+
+process.on('SIGTERM', () => {
+  persistData();
+  process.exit(0);
 });

@@ -4,6 +4,7 @@ dist/
 *.db
 *.db-wal
 *.db-shm
+backup.json
 .DS_Store
 backend/uploads/*
 !backend/uploads/.gitkeep

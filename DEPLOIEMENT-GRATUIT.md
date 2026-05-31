@@ -112,7 +112,9 @@ Copiez votre URL Render et mettez-la :
 | **Prix** | 0 $ — tout est gratuit |
 | **Premier chargement** | Peut prendre 30–60 sec si personne n'a visité le site depuis un moment (plan gratuit) |
 | **Mot de passe admin** | Changez-le dans Render → Environment → `ADMIN_PASSWORD` |
-| **Mises à jour** | Modifiez le code → `git push` → Render redéploie automatiquement |
+| **Données en local** | Sauvegardées automatiquement dans `%LOCALAPPDATA%\\SoeursFinds\\data` |
+| **Données sur Render** | Conservées tant que le serveur n'est pas redéployé ; évitez les `git push` inutiles |
+| **Mises à jour du code** | `git push` → Render redéploie automatiquement |
 
 ---
 
