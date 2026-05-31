@@ -44,9 +44,15 @@ export default function AdminPage() {
 
       setAuthenticated(true);
       setError('');
-    } catch {
+    } catch (err) {
       setAuthenticated(false);
-      setError('Mot de passe incorrect');
+      if (err.message === 'SERVEUR_INACCESSIBLE') {
+        setError('Serveur inaccessible. Lancez le backend : ouvrez un terminal à la racine du projet et tapez npm run dev');
+      } else if (err.message === 'MOT_DE_PASSE_INCORRECT') {
+        setError('Mot de passe incorrect');
+      } else {
+        setError('Erreur de connexion. Réessayez.');
+      }
     }
   }, []);
 

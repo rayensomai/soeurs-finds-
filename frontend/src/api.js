@@ -34,14 +34,26 @@ export async function createOrder({ product_id, prenom, nom, telephone }) {
 }
 
 export async function fetchOrders(adminPassword) {
-  const res = await fetch(`${API}/orders`, { headers: adminHeaders(adminPassword) });
-  if (!res.ok) throw new Error('Accès refusé');
+  let res;
+  try {
+    res = await fetch(`${API}/orders`, { headers: adminHeaders(adminPassword) });
+  } catch {
+    throw new Error('SERVEUR_INACCESSIBLE');
+  }
+  if (res.status === 401) throw new Error('MOT_DE_PASSE_INCORRECT');
+  if (!res.ok) throw new Error('ERREUR_SERVEUR');
   return res.json();
 }
 
 export async function fetchNewOrderCount(adminPassword) {
-  const res = await fetch(`${API}/orders/new-count`, { headers: adminHeaders(adminPassword) });
-  if (!res.ok) throw new Error('Accès refusé');
+  let res;
+  try {
+    res = await fetch(`${API}/orders/new-count`, { headers: adminHeaders(adminPassword) });
+  } catch {
+    throw new Error('SERVEUR_INACCESSIBLE');
+  }
+  if (res.status === 401) throw new Error('MOT_DE_PASSE_INCORRECT');
+  if (!res.ok) throw new Error('ERREUR_SERVEUR');
   return res.json();
 }
 
