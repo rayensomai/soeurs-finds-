@@ -1,5 +1,6 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { formatPhoneDisplay } from '../api';
+import { fetchCategories, formatPhoneDisplay } from '../api';
 import Logo from './Logo';
 
 const PHONE = '5146010010';
@@ -10,6 +11,12 @@ const ADDRESS = {
 };
 
 export default function Footer() {
+  const [categories, setCategories] = useState([]);
+
+  useEffect(() => {
+    fetchCategories().then(setCategories).catch(() => {});
+  }, []);
+
   return (
     <footer className="mt-20 border-t border-gray-200/60 bg-white/50">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
@@ -24,12 +31,13 @@ export default function Footer() {
           <div>
             <h3 className="mb-3 font-semibold text-gray-900">Catégories</h3>
             <ul className="space-y-2 text-sm text-gray-600">
-              <li><Link to="/categorie/cuisine" className="hover:text-brand-600">Cuisine</Link></li>
-              <li><Link to="/categorie/bien-etre" className="hover:text-brand-600">Bien-être</Link></li>
-              <li><Link to="/categorie/lumiere" className="hover:text-brand-600">Lumière</Link></li>
-              <li><Link to="/categorie/sport-divertissement" className="hover:text-brand-600">Sport & Divertissement</Link></li>
-              <li><Link to="/categorie/technologie" className="hover:text-brand-600">Technologie</Link></li>
-              <li><Link to="/categorie/jardinage" className="hover:text-brand-600">Jardinage</Link></li>
+              {categories.map((cat) => (
+                <li key={cat.id}>
+                  <Link to={`/categorie/${cat.id}`} className="hover:text-brand-600">
+                    {cat.icon} {cat.name}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 

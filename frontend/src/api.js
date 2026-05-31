@@ -100,6 +100,30 @@ export async function deleteProduct(id, adminPassword) {
   return result;
 }
 
+export async function createCategory(data, adminPassword) {
+  const res = await fetch(`${API}/categories`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...adminHeaders(adminPassword),
+    },
+    body: JSON.stringify(data),
+  });
+  const result = await res.json();
+  if (!res.ok) throw new Error(result.error || 'Erreur lors de l\'ajout');
+  return result;
+}
+
+export async function deleteCategory(id, adminPassword) {
+  const res = await fetch(`${API}/categories/${id}`, {
+    method: 'DELETE',
+    headers: adminHeaders(adminPassword),
+  });
+  const result = await res.json();
+  if (!res.ok) throw new Error(result.error || 'Erreur lors de la suppression');
+  return result;
+}
+
 export function formatPrice(price) {
   if (price == null) return '—';
   return new Intl.NumberFormat('fr-CA', {

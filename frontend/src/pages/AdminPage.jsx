@@ -8,6 +8,7 @@ import {
   updateOrderStatus,
 } from '../api';
 import AdminProducts from '../components/AdminProducts';
+import AdminCategories from '../components/AdminCategories';
 import Logo from '../components/Logo';
 
 const STATUS_LABELS = {
@@ -188,10 +189,10 @@ export default function AdminPage() {
         </div>
       </div>
 
-      <div className="mb-8 flex gap-2 rounded-2xl bg-white/80 p-1.5 shadow-sm">
+      <div className="mb-8 flex flex-wrap gap-2 rounded-2xl bg-white/80 p-1.5 shadow-sm">
         <button
           onClick={() => setTab('orders')}
-          className={`flex-1 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors ${
+          className={`flex-1 min-w-[7rem] rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors ${
             tab === 'orders' ? 'bg-brand-500 text-white shadow-md' : 'text-gray-600 hover:bg-gray-50'
           }`}
         >
@@ -199,15 +200,25 @@ export default function AdminPage() {
         </button>
         <button
           onClick={() => setTab('products')}
-          className={`flex-1 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors ${
+          className={`flex-1 min-w-[7rem] rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors ${
             tab === 'products' ? 'bg-brand-500 text-white shadow-md' : 'text-gray-600 hover:bg-gray-50'
           }`}
         >
           📦 Produits
         </button>
+        <button
+          onClick={() => setTab('categories')}
+          className={`flex-1 min-w-[7rem] rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors ${
+            tab === 'categories' ? 'bg-brand-500 text-white shadow-md' : 'text-gray-600 hover:bg-gray-50'
+          }`}
+        >
+          🏷️ Catégories
+        </button>
       </div>
 
-      {tab === 'products' ? (
+      {tab === 'categories' ? (
+        <AdminCategories password={password} />
+      ) : tab === 'products' ? (
         <AdminProducts password={password} />
       ) : orders.length === 0 ? (
         <div className="glass-card py-20 text-center">

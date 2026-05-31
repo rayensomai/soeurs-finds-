@@ -28,8 +28,85 @@ function checkAdmin(req, res, next) {
 }
 
 app.get('/api/categories', (_req, res) => {
-  const categories = db.prepare('SELECT * FROM categories ORDER BY name').all();
+  const categories = db
+    .prepare(`
+      SELECT c.*, COUNT(p.id) as product_count
+      FROM categories c
+      LEFT JOIN products p ON p.category_id = c.id
+      GROUP BY c.id
+      ORDER BY c.name
+    `)
+    .all();
   res.json(categories);
+});
+
+app.post('/api/categories', checkAdmin, (req, res) => {
+  const { name, description, icon, color, id: customId } = req.body;
+
+  if (!name?.trim()) {
+    return res.status(400).json({ error: 'Le nom est obligatoire' });
+  }
+
+  const id =
+    customId?.trim() ||
+    name
+      .trim()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '');
+
+  if (!id) {
+    return res.status(400).json({ error: 'Identifiant de catégorie invalide' });
+  }
+
+  const existing = db.prepare('SELECT id FROM categories WHERE id = ?').get(id);
+  if (existing) {
+    return res.status(400).json({ error: 'Cette catégorie existe déjà' });
+  }
+
+  db.prepare(
+    'INSERT INTO categories (id, name, description, icon, color) VALUES (?, ?, ?, ?, ?)'
+  ).run(
+    id,
+    name.trim(),
+    description?.trim() || '',
+    icon?.trim() || '📦',
+    color?.trim() || '#E85D4C'
+  );
+
+  const category = db
+    .prepare(`
+      SELECT c.*, COUNT(p.id) as product_count
+      FROM categories c
+      LEFT JOIN products p ON p.category_id = c.id
+      WHERE c.id = ?
+      GROUP BY c.id
+    `)
+    .get(id);
+
+  res.status(201).json(category);
+});
+
+app.delete('/api/categories/:id', checkAdmin, (req, res) => {
+  const category = db.prepare('SELECT * FROM categories WHERE id = ?').get(req.params.id);
+  if (!category) {
+    return res.status(404).json({ error: 'Catégorie introuvable' });
+  }
+
+  const productCount = db
+    .prepare('SELECT COUNT(*) as count FROM products WHERE category_id = ?')
+    .get(req.params.id);
+
+  if (productCount.count > 0) {
+    return res.status(400).json({
+      error: `Impossible de supprimer : ${productCount.count} produit(s) dans cette catégorie. Supprimez-les d'abord.`,
+    });
+  }
+
+  db.prepare('DELETE FROM categories WHERE id = ?').run(req.params.id);
+  res.json({ message: 'Catégorie supprimée avec succès' });
 });
 
 app.get('/api/categories/:id/products', (req, res) => {
