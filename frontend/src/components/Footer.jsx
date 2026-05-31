@@ -15,7 +15,7 @@ export default function Footer() {
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="grid gap-10 md:grid-cols-3">
           <div>
-            <Logo className="mb-4 h-16 w-auto" />
+            <Logo className="mb-4 h-24 w-auto" />
             <p className="text-sm leading-relaxed text-gray-600">
               Boutique canadienne — produits sélectionnés pour votre maison, votre bien-être et vos loisirs.
             </p>

@@ -8,7 +8,7 @@ export default function Header() {
     <header className="sticky top-0 z-50 border-b border-white/20 bg-cream/80 backdrop-blur-xl">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
         <Link to="/" className="group transition-transform hover:scale-[1.02]">
-          <Logo className="h-12 w-auto sm:h-14" />
+          <Logo className="h-14 w-auto sm:h-[4.5rem]" />
         </Link>
 
         <nav className="flex items-center gap-2 sm:gap-4">

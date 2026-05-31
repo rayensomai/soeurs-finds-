@@ -111,7 +111,7 @@ export default function AdminPage() {
         <div className="glass-card w-full max-w-md p-8">
           <div className="mb-6 text-center">
             <div className="mb-4 flex justify-center">
-              <Logo className="h-16 w-auto" />
+              <Logo className="h-20 w-auto" />
             </div>
             <h1 className="font-display text-2xl font-bold">Espace Admin</h1>
             <p className="mt-2 text-sm text-gray-600">
