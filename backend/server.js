@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
-import { existsSync } from 'fs';
+import { existsSync, mkdirSync, writeFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import db from './database.js';
 
@@ -10,6 +10,11 @@ dotenv.config();
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const frontendDist = path.join(__dirname, '..', 'frontend', 'dist');
+const uploadsDir = path.join(__dirname, 'uploads');
+
+if (!existsSync(uploadsDir)) {
+  mkdirSync(uploadsDir, { recursive: true });
+}
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -17,7 +22,8 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 const SITE_URL = process.env.RENDER_EXTERNAL_URL || process.env.SITE_URL || `http://localhost:${PORT}`;
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '12mb' }));
+app.use('/uploads', express.static(uploadsDir));
 
 function checkAdmin(req, res, next) {
   const password = req.headers['x-admin-password'];
@@ -109,9 +115,23 @@ app.delete('/api/categories/:id', checkAdmin, (req, res) => {
   res.json({ message: 'Catégorie supprimée avec succès' });
 });
 
+function parseProductImages(body) {
+  const { image, images } = body;
+  const imageList = Array.isArray(images)
+    ? images.filter(Boolean).map((url) => url.trim())
+    : image?.trim()
+      ? [image.trim()]
+      : [];
+  return { imageList, primaryImage: imageList[0] || '' };
+}
+
 app.get('/api/categories/:id/products', (req, res) => {
   const products = db
-    .prepare('SELECT * FROM products WHERE category_id = ? ORDER BY featured DESC, name')
+    .prepare(`
+      SELECT * FROM products
+      WHERE category_id = ? AND COALESCE(status, 'disponible') = 'disponible'
+      ORDER BY featured DESC, name
+    `)
     .all(req.params.id);
   res.json(products);
 });
@@ -122,7 +142,7 @@ app.get('/api/products/featured', (_req, res) => {
       SELECT p.*, c.name as category_name, c.color as category_color
       FROM products p
       JOIN categories c ON p.category_id = c.id
-      WHERE p.featured = 1
+      WHERE p.featured = 1 AND COALESCE(p.status, 'disponible') = 'disponible'
       ORDER BY p.id DESC
       LIMIT 8
     `)
@@ -143,7 +163,7 @@ app.get('/api/products', checkAdmin, (_req, res) => {
 });
 
 app.post('/api/products', checkAdmin, (req, res) => {
-  const { category_id, name, description, price, image, featured } = req.body;
+  const { category_id, name, description, price, featured, status } = req.body;
 
   if (!category_id || !name?.trim() || price == null || Number.isNaN(Number(price))) {
     return res.status(400).json({ error: 'Catégorie, nom et prix sont obligatoires' });
@@ -154,18 +174,23 @@ app.post('/api/products', checkAdmin, (req, res) => {
     return res.status(400).json({ error: 'Catégorie invalide' });
   }
 
+  const productStatus = status === 'vendu' ? 'vendu' : 'disponible';
+  const { imageList, primaryImage } = parseProductImages(req.body);
+
   const result = db
     .prepare(`
-      INSERT INTO products (category_id, name, description, price, image, featured)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT INTO products (category_id, name, description, price, image, images, featured, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `)
     .run(
       category_id,
       name.trim(),
       description?.trim() || '',
       Number(price),
-      image?.trim() || '',
-      featured ? 1 : 0
+      primaryImage,
+      imageList.length ? JSON.stringify(imageList) : null,
+      featured ? 1 : 0,
+      productStatus
     );
 
   const product = db
@@ -178,6 +203,54 @@ app.post('/api/products', checkAdmin, (req, res) => {
     .get(result.lastInsertRowid);
 
   res.status(201).json(product);
+});
+
+app.patch('/api/products/:id', checkAdmin, (req, res) => {
+  const product = db.prepare('SELECT * FROM products WHERE id = ?').get(req.params.id);
+  if (!product) {
+    return res.status(404).json({ error: 'Produit introuvable' });
+  }
+
+  const { category_id, name, description, price, featured, status } = req.body;
+
+  if (!category_id || !name?.trim() || price == null || Number.isNaN(Number(price))) {
+    return res.status(400).json({ error: 'Catégorie, nom et prix sont obligatoires' });
+  }
+
+  const category = db.prepare('SELECT id FROM categories WHERE id = ?').get(category_id);
+  if (!category) {
+    return res.status(400).json({ error: 'Catégorie invalide' });
+  }
+
+  const productStatus = status === 'vendu' ? 'vendu' : 'disponible';
+  const { imageList, primaryImage } = parseProductImages(req.body);
+
+  db.prepare(`
+    UPDATE products
+    SET category_id = ?, name = ?, description = ?, price = ?, image = ?, images = ?, featured = ?, status = ?
+    WHERE id = ?
+  `).run(
+    category_id,
+    name.trim(),
+    description?.trim() || '',
+    Number(price),
+    primaryImage,
+    imageList.length ? JSON.stringify(imageList) : null,
+    featured ? 1 : 0,
+    productStatus,
+    req.params.id
+  );
+
+  const updated = db
+    .prepare(`
+      SELECT p.*, c.name as category_name, c.color as category_color
+      FROM products p
+      JOIN categories c ON p.category_id = c.id
+      WHERE p.id = ?
+    `)
+    .get(req.params.id);
+
+  res.json(updated);
 });
 
 app.delete('/api/products/:id', checkAdmin, (req, res) => {
@@ -226,6 +299,10 @@ app.post('/api/orders', (req, res) => {
   const product = db.prepare('SELECT * FROM products WHERE id = ?').get(product_id);
   if (!product) {
     return res.status(404).json({ error: 'Produit introuvable' });
+  }
+
+  if (product.status === 'vendu') {
+    return res.status(400).json({ error: 'Ce produit est déjà vendu' });
   }
 
   const result = db
@@ -285,6 +362,39 @@ app.patch('/api/orders/:id/status', checkAdmin, (req, res) => {
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok' });
+});
+
+app.post('/api/upload', checkAdmin, (req, res) => {
+  const { data, filename } = req.body;
+
+  if (!data?.startsWith('data:image/')) {
+    return res.status(400).json({ error: 'Image invalide' });
+  }
+
+  const match = data.match(/^data:(image\/[\w+.-]+);base64,(.+)$/);
+  if (!match) {
+    return res.status(400).json({ error: 'Format d\'image non supporté' });
+  }
+
+  const mime = match[1];
+  const ext = mime.split('/')[1]?.replace('jpeg', 'jpg') || 'jpg';
+  const allowed = ['jpg', 'png', 'webp', 'gif'];
+  if (!allowed.includes(ext)) {
+    return res.status(400).json({ error: 'Utilisez JPG, PNG, WEBP ou GIF' });
+  }
+
+  const buffer = Buffer.from(match[2], 'base64');
+  if (buffer.length > 8 * 1024 * 1024) {
+    return res.status(400).json({ error: 'Image trop grande (max 8 Mo)' });
+  }
+
+  const safeName = (filename || 'photo')
+    .replace(/[^a-zA-Z0-9.-]/g, '-')
+    .slice(0, 40);
+  const storedName = `${Date.now()}-${safeName}.${ext}`;
+  writeFileSync(path.join(uploadsDir, storedName), buffer);
+
+  res.status(201).json({ url: `/uploads/${storedName}` });
 });
 
 app.get('/sitemap.xml', (_req, res) => {

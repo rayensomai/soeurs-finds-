@@ -5,21 +5,39 @@ import {
   fetchAllProducts,
   fetchCategories,
   formatPrice,
+  getProductImages,
+  getProductMainImage,
+  updateProduct,
 } from '../api';
+import ProductImagesField from './ProductImagesField';
 
 const EMPTY_FORM = {
   category_id: '',
   name: '',
   description: '',
   price: '',
-  image: '',
+  images: [],
   featured: false,
+  status: 'disponible',
 };
+
+function productToForm(product) {
+  return {
+    category_id: product.category_id,
+    name: product.name,
+    description: product.description || '',
+    price: String(product.price),
+    images: getProductImages(product),
+    featured: !!product.featured,
+    status: product.status || 'disponible',
+  };
+}
 
 export default function AdminProducts({ password }) {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [form, setForm] = useState(EMPTY_FORM);
+  const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -33,9 +51,10 @@ export default function AdminProducts({ password }) {
       ]);
       setProducts(productsData);
       setCategories(categoriesData);
-      if (!form.category_id && categoriesData.length > 0) {
-        setForm((prev) => ({ ...prev, category_id: categoriesData[0].id }));
-      }
+      setForm((prev) => ({
+        ...prev,
+        category_id: prev.category_id || categoriesData[0]?.id || '',
+      }));
     } catch (err) {
       setError(err.message);
     } finally {
@@ -47,6 +66,31 @@ export default function AdminProducts({ password }) {
     loadData();
   }, [password]);
 
+  const resetForm = () => {
+    setEditingId(null);
+    setForm({ ...EMPTY_FORM, category_id: categories[0]?.id || '' });
+    setError('');
+  };
+
+  const startEdit = (product) => {
+    setEditingId(product.id);
+    setForm(productToForm(product));
+    setError('');
+    setSuccess('');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const buildPayload = () => ({
+    category_id: form.category_id,
+    name: form.name,
+    description: form.description,
+    price: parseFloat(form.price),
+    images: form.images,
+    image: form.images[0] || '',
+    featured: form.featured,
+    status: form.status,
+  });
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
@@ -54,16 +98,15 @@ export default function AdminProducts({ password }) {
     setSuccess('');
 
     try {
-      await createProduct(
-        {
-          ...form,
-          price: parseFloat(form.price),
-          featured: form.featured,
-        },
-        password
-      );
-      setForm({ ...EMPTY_FORM, category_id: categories[0]?.id || '' });
-      setSuccess('Produit ajouté avec succès !');
+      if (editingId) {
+        await updateProduct(editingId, buildPayload(), password);
+        setSuccess('Produit modifié avec succès !');
+        resetForm();
+      } else {
+        await createProduct(buildPayload(), password);
+        setSuccess('Produit ajouté avec succès !');
+        setForm({ ...EMPTY_FORM, category_id: categories[0]?.id || '' });
+      }
       await loadData();
     } catch (err) {
       setError(err.message);
@@ -72,11 +115,36 @@ export default function AdminProducts({ password }) {
     }
   };
 
+  const handleQuickStatus = async (product, status) => {
+    try {
+      await updateProduct(
+        product.id,
+        {
+          ...productToForm(product),
+          price: product.price,
+          images: getProductImages(product),
+          image: getProductMainImage(product) || '',
+          featured: !!product.featured,
+          status,
+        },
+        password
+      );
+      setSuccess(status === 'vendu' ? 'Produit marqué comme vendu.' : 'Produit marqué comme disponible.');
+      await loadData();
+      if (editingId === product.id) {
+        setForm((prev) => ({ ...prev, status }));
+      }
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
   const handleDelete = async (product) => {
     if (!confirm(`Supprimer « ${product.name} » ?`)) return;
 
     try {
       await deleteProduct(product.id, password);
+      if (editingId === product.id) resetForm();
       setSuccess('Produit supprimé.');
       await loadData();
     } catch (err) {
@@ -98,10 +166,42 @@ export default function AdminProducts({ password }) {
     <div className="grid gap-8 lg:grid-cols-5">
       <div className="lg:col-span-2">
         <div className="glass-card p-6 sm:p-8">
-          <h2 className="font-display text-xl font-bold text-gray-900">Ajouter un article</h2>
-          <p className="mt-1 text-sm text-gray-600">Prix en dollars canadiens (CAD)</p>
+          <h2 className="font-display text-xl font-bold text-gray-900">
+            {editingId ? 'Modifier l\'article' : 'Ajouter un article'}
+          </h2>
+          <p className="mt-1 text-sm text-gray-600">
+            {editingId ? 'Mettez à jour les informations du produit' : 'Prix en dollars canadiens (CAD)'}
+          </p>
 
           <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">Statut *</label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setForm({ ...form, status: 'disponible' })}
+                  className={`rounded-2xl border-2 px-4 py-3 text-sm font-semibold transition-colors ${
+                    form.status === 'disponible'
+                      ? 'border-green-500 bg-green-50 text-green-700'
+                      : 'border-gray-200 bg-white text-gray-600 hover:border-green-200'
+                  }`}
+                >
+                  ✓ Disponible
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setForm({ ...form, status: 'vendu' })}
+                  className={`rounded-2xl border-2 px-4 py-3 text-sm font-semibold transition-colors ${
+                    form.status === 'vendu'
+                      ? 'border-gray-500 bg-gray-100 text-gray-700'
+                      : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                  }`}
+                >
+                  Vendu
+                </button>
+              </div>
+            </div>
+
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-700">Catégorie *</label>
               <select
@@ -154,16 +254,11 @@ export default function AdminProducts({ password }) {
               />
             </div>
 
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-gray-700">URL de l'image</label>
-              <input
-                type="url"
-                className="input-field"
-                placeholder="https://..."
-                value={form.image}
-                onChange={(e) => setForm({ ...form, image: e.target.value })}
-              />
-            </div>
+            <ProductImagesField
+              images={form.images}
+              onChange={(images) => setForm({ ...form, images })}
+              password={password}
+            />
 
             <label className="flex cursor-pointer items-center gap-3">
               <input
@@ -178,9 +273,24 @@ export default function AdminProducts({ password }) {
             {error && <p className="rounded-xl bg-red-50 px-4 py-2 text-sm text-red-600">{error}</p>}
             {success && <p className="rounded-xl bg-green-50 px-4 py-2 text-sm text-green-700">{success}</p>}
 
-            <button type="submit" disabled={submitting} className="btn-primary w-full">
-              {submitting ? 'Ajout en cours...' : 'Ajouter le produit'}
-            </button>
+            <div className="flex gap-2">
+              {editingId && (
+                <button
+                  type="button"
+                  onClick={resetForm}
+                  className="flex-1 rounded-full border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-600 hover:bg-gray-50"
+                >
+                  Annuler
+                </button>
+              )}
+              <button type="submit" disabled={submitting} className="btn-primary flex-1">
+                {submitting
+                  ? 'Enregistrement...'
+                  : editingId
+                    ? 'Enregistrer les modifications'
+                    : 'Ajouter le produit'}
+              </button>
+            </div>
           </form>
         </div>
       </div>
@@ -199,45 +309,85 @@ export default function AdminProducts({ password }) {
           </div>
         ) : (
           <div className="space-y-3">
-            {products.map((product) => (
-              <div
-                key={product.id}
-                className="glass-card flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between"
-              >
-                <div className="flex items-center gap-4">
-                  {product.image ? (
-                    <img
-                      src={product.image}
-                      alt={product.name}
-                      className="h-16 w-16 rounded-2xl object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-100 text-2xl">
-                      📦
+            {products.map((product) => {
+              const mainImage = getProductMainImage(product);
+              const isSold = product.status === 'vendu';
+              const isEditing = editingId === product.id;
+
+              return (
+                <div
+                  key={product.id}
+                  className={`glass-card flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between ${
+                    isEditing ? 'ring-2 ring-brand-300' : ''
+                  } ${isSold ? 'opacity-80' : ''}`}
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="relative">
+                      {mainImage ? (
+                        <img
+                          src={mainImage}
+                          alt={product.name}
+                          className={`h-16 w-16 rounded-2xl object-cover ${isSold ? 'grayscale' : ''}`}
+                        />
+                      ) : (
+                        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-100 text-2xl">
+                          📦
+                        </div>
+                      )}
                     </div>
-                  )}
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="font-semibold text-gray-900">{product.name}</h3>
-                      {product.featured ? (
-                        <span className="rounded-full bg-gold/20 px-2 py-0.5 text-xs font-semibold text-amber-800">
-                          Vedette
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="font-semibold text-gray-900">{product.name}</h3>
+                        <span
+                          className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                            isSold ? 'bg-gray-200 text-gray-700' : 'bg-green-100 text-green-700'
+                          }`}
+                        >
+                          {isSold ? 'Vendu' : 'Disponible'}
                         </span>
-                      ) : null}
+                        {product.featured ? (
+                          <span className="rounded-full bg-gold/20 px-2 py-0.5 text-xs font-semibold text-amber-800">
+                            Vedette
+                          </span>
+                        ) : null}
+                      </div>
+                      <p className="text-sm text-gray-600">{product.category_name}</p>
+                      <p className="font-semibold text-brand-600">{formatPrice(product.price)}</p>
                     </div>
-                    <p className="text-sm text-gray-600">{product.category_name}</p>
-                    <p className="font-semibold text-brand-600">{formatPrice(product.price)}</p>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => startEdit(product)}
+                      className="rounded-full bg-brand-50 px-4 py-2 text-sm font-semibold text-brand-700 hover:bg-brand-100"
+                    >
+                      Modifier
+                    </button>
+                    {isSold ? (
+                      <button
+                        onClick={() => handleQuickStatus(product, 'disponible')}
+                        className="rounded-full bg-green-50 px-4 py-2 text-sm font-semibold text-green-700 hover:bg-green-100"
+                      >
+                        Remettre disponible
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleQuickStatus(product, 'vendu')}
+                        className="rounded-full bg-gray-100 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-200"
+                      >
+                        Marquer vendu
+                      </button>
+                    )}
+                    <button
+                      onClick={() => handleDelete(product)}
+                      className="rounded-full bg-red-50 px-4 py-2 text-sm font-semibold text-red-600 transition-colors hover:bg-red-100"
+                    >
+                      Supprimer
+                    </button>
                   </div>
                 </div>
-
-                <button
-                  onClick={() => handleDelete(product)}
-                  className="rounded-full bg-red-50 px-4 py-2 text-sm font-semibold text-red-600 transition-colors hover:bg-red-100"
-                >
-                  Supprimer
-                </button>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

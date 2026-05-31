@@ -90,6 +90,64 @@ export async function createProduct(data, adminPassword) {
   return result;
 }
 
+export async function uploadImage(file, adminPassword) {
+  const data = await readFileAsDataUrl(file);
+  const res = await fetch(`${API}/upload`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...adminHeaders(adminPassword),
+    },
+    body: JSON.stringify({ data, filename: file.name }),
+  });
+  const result = await res.json();
+  if (!res.ok) throw new Error(result.error || 'Erreur lors du téléversement');
+  return result.url;
+}
+
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+export function getProductImages(product) {
+  if (product?.images) {
+    try {
+      const parsed = JSON.parse(product.images);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    } catch {
+      /* ignore */
+    }
+  }
+  return product?.image ? [product.image] : [];
+}
+
+export function getProductMainImage(product) {
+  return getProductImages(product)[0] || null;
+}
+
+export function isProductAvailable(product) {
+  return !product?.status || product.status === 'disponible';
+}
+
+export async function updateProduct(id, data, adminPassword) {
+  const res = await fetch(`${API}/products/${id}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      ...adminHeaders(adminPassword),
+    },
+    body: JSON.stringify(data),
+  });
+  const result = await res.json();
+  if (!res.ok) throw new Error(result.error || 'Erreur lors de la modification');
+  return result;
+}
+
 export async function deleteProduct(id, adminPassword) {
   const res = await fetch(`${API}/products/${id}`, {
     method: 'DELETE',

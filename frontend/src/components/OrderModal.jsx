@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { createOrder, formatPrice } from '../api';
+import { createOrder, formatPrice, getProductMainImage } from '../api';
 
 export default function OrderModal({ product, onClose }) {
   const [form, setForm] = useState({ prenom: '', nom: '', telephone: '' });
@@ -8,6 +8,8 @@ export default function OrderModal({ product, onClose }) {
   const [error, setError] = useState('');
 
   if (!product) return null;
+
+  const mainImage = getProductMainImage(product);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -62,11 +64,15 @@ export default function OrderModal({ product, onClose }) {
         ) : (
           <>
             <div className="mb-6 flex items-center gap-4">
-              <img
-                src={product.image}
-                alt={product.name}
-                className="h-16 w-16 rounded-2xl object-cover"
-              />
+              {mainImage ? (
+                <img
+                  src={mainImage}
+                  alt={product.name}
+                  className="h-16 w-16 rounded-2xl object-cover"
+                />
+              ) : (
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-100 text-2xl">📦</div>
+              )}
               <div>
                 <h2 className="font-display text-xl font-bold text-gray-900">
                   Commander

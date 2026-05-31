@@ -1,18 +1,24 @@
-import { formatPrice } from '../api';
+import { formatPrice, getProductMainImage } from '../api';
 
 export default function ProductCard({ product, onBuy, index = 0 }) {
+  const mainImage = getProductMainImage(product);
+
   return (
     <article
       className="group glass-card overflow-hidden transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-black/10"
       style={{ animationDelay: `${index * 80}ms` }}
     >
       <div className="relative aspect-square overflow-hidden bg-gray-100">
-        <img
-          src={product.image}
-          alt={product.name}
-          className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
-          loading="lazy"
-        />
+        {mainImage ? (
+          <img
+            src={mainImage}
+            alt={product.name}
+            className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+            loading="lazy"
+          />
+        ) : (
+          <div className="flex h-full items-center justify-center text-5xl text-gray-300">📦</div>
+        )}
         {product.featured ? (
           <span className="absolute left-4 top-4 rounded-full bg-gold px-3 py-1 text-xs font-bold uppercase tracking-wider text-white shadow-lg">
             Populaire

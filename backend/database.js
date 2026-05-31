@@ -41,6 +41,14 @@ db.exec(`
   );
 `);
 
+const productColumnNames = db.prepare('PRAGMA table_info(products)').all().map((col) => col.name);
+if (!productColumnNames.includes('images')) {
+  db.exec('ALTER TABLE products ADD COLUMN images TEXT');
+}
+if (!productColumnNames.includes('status')) {
+  db.exec("ALTER TABLE products ADD COLUMN status TEXT DEFAULT 'disponible'");
+}
+
 const insertCategory = db.prepare(
   'INSERT OR IGNORE INTO categories (id, name, description, icon, color) VALUES (?, ?, ?, ?, ?)'
 );
