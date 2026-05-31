@@ -42,7 +42,7 @@ npm run dev
 
 - **Site client** : http://localhost:5173
 - **API backend** : http://localhost:3001
-- **Panel Admin** : http://localhost:5173/admin (mot de passe : `admin123`)
+- **Panel Admin** : http://localhost:5173/admin
 
 ## Structure
 
