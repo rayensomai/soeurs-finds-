@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   fetchNewOrderCount,
   fetchOrders,
+  fetchSiteStatus,
   formatDate,
   formatPhoneDisplay,
   formatPrice,
@@ -27,6 +28,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [siteStatus, setSiteStatus] = useState(null);
   const prevCountRef = useRef(0);
 
   const loadOrders = useCallback(async (pw) => {
@@ -62,6 +64,13 @@ export default function AdminPage() {
       loadOrders(password);
     }
   }, [password, loadOrders]);
+
+  useEffect(() => {
+    if (!authenticated) return;
+    fetchSiteStatus()
+      .then(setSiteStatus)
+      .catch(() => setSiteStatus(null));
+  }, [authenticated]);
 
   useEffect(() => {
     if (!authenticated || tab !== 'orders') return;
@@ -160,6 +169,19 @@ export default function AdminPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      {siteStatus && (
+        siteStatus.persistent ? (
+          <div className="mb-6 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+            Sauvegarde permanente activée — vos produits, commandes et photos sont enregistrés définitivement.
+          </div>
+        ) : siteStatus.online ? (
+          <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            Attention : passez au plan Render Starter + disque permanent pour conserver vos modifications.
+            Voir SOLUTION-PAYANTE.md
+          </div>
+        ) : null
+      )}
+
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="font-display text-3xl font-bold text-gray-900">Administration</h1>

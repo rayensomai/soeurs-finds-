@@ -7,6 +7,7 @@ import {
   restoreIfEmpty,
   saveBackup,
 } from './persistence.js';
+import { downloadRemoteBackup, uploadRemoteBackup } from './cloudBackup.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dbPath = getDbPath();
@@ -60,6 +61,7 @@ if (!productColumnNames.includes('status')) {
   db.exec("ALTER TABLE products ADD COLUMN status TEXT DEFAULT 'disponible'");
 }
 
+await downloadRemoteBackup();
 restoreIfEmpty(db);
 
 const insertCategory = db.prepare(
@@ -128,6 +130,9 @@ console.log(`Données enregistrées dans : ${dbPath}`);
 
 export function persistData() {
   saveBackup(db);
+  uploadRemoteBackup().catch((err) => {
+    console.error('Sauvegarde cloud :', err.message);
+  });
 }
 
 export default db;

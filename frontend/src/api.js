@@ -33,6 +33,12 @@ export async function createOrder({ product_id, prenom, nom, telephone }) {
   return data;
 }
 
+export async function fetchSiteStatus() {
+  const res = await fetch(`${API}/health`);
+  if (!res.ok) throw new Error('Erreur statut site');
+  return res.json();
+}
+
 export async function fetchOrders(adminPassword) {
   let res;
   try {

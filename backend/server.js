@@ -6,6 +6,7 @@ import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import db, { persistData } from './database.js';
 import { getUploadsDir } from './persistence.js';
+import { cloudBackupEnabled } from './cloudBackup.js';
 
 dotenv.config();
 
@@ -20,6 +21,15 @@ const SITE_URL =
   process.env.SITE_URL ||
   process.env.RENDER_EXTERNAL_URL ||
   `http://localhost:${PORT}`;
+
+function getSiteUrl(req) {
+  const host = req.get('host');
+  if (host) {
+    const proto = req.get('x-forwarded-proto') || req.protocol || 'https';
+    return `${proto}://${host}`;
+  }
+  return SITE_URL;
+}
 
 app.use(cors());
 app.use(express.json({ limit: '12mb' }));
@@ -383,7 +393,14 @@ app.patch('/api/orders/:id/status', checkAdmin, (req, res) => {
 });
 
 app.get('/api/health', (_req, res) => {
-  res.json({ status: 'ok' });
+  const diskStorage = Boolean(process.env.SOEURS_FINDS_DATA);
+  res.json({
+    status: 'ok',
+    cloudBackup: cloudBackupEnabled(),
+    diskStorage,
+    persistent: cloudBackupEnabled() || diskStorage,
+    online: Boolean(process.env.RENDER),
+  });
 });
 
 app.post('/api/upload', checkAdmin, (req, res) => {
@@ -419,7 +436,8 @@ app.post('/api/upload', checkAdmin, (req, res) => {
   res.status(201).json({ url: `/uploads/${storedName}` });
 });
 
-app.get('/sitemap.xml', (_req, res) => {
+app.get('/sitemap.xml', (req, res) => {
+  const siteUrl = getSiteUrl(req);
   const categories = db.prepare('SELECT id FROM categories').all();
   const urls = [
     '',
@@ -431,7 +449,7 @@ app.get('/sitemap.xml', (_req, res) => {
 ${urls
   .map(
     (url) => `  <url>
-    <loc>${SITE_URL}${url}</loc>
+    <loc>${siteUrl}${url}</loc>
     <changefreq>weekly</changefreq>
   </url>`
   )
@@ -441,12 +459,13 @@ ${urls
   res.type('application/xml').send(xml);
 });
 
-app.get('/robots.txt', (_req, res) => {
+app.get('/robots.txt', (req, res) => {
+  const siteUrl = getSiteUrl(req);
   res.type('text/plain').send(`User-agent: *
 Allow: /
 Disallow: /admin
 
-Sitemap: ${SITE_URL}/sitemap.xml
+Sitemap: ${siteUrl}/sitemap.xml
 `);
 });
 
