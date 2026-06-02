@@ -3,6 +3,7 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import HomePage from './pages/HomePage';
 import CategoryPage from './pages/CategoryPage';
+import ProductPage from './pages/ProductPage';
 import AdminPage from './pages/AdminPage';
 
 export default function App() {
@@ -13,6 +14,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/categorie/:id" element={<CategoryPage />} />
+          <Route path="/produit/:id" element={<ProductPage />} />
           <Route path="/admin" element={<AdminPage />} />
         </Routes>
       </main>

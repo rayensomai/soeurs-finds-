@@ -161,8 +161,11 @@ app.get('/api/categories/:id/products', (req, res) => {
   const products = db
     .prepare(`
       SELECT * FROM products
-      WHERE category_id = ? AND COALESCE(status, 'disponible') = 'disponible'
-      ORDER BY featured DESC, name
+      WHERE category_id = ?
+      ORDER BY
+        CASE WHEN COALESCE(status, 'disponible') = 'disponible' THEN 0 ELSE 1 END,
+        featured DESC,
+        name
     `)
     .all(req.params.id);
   res.json(products);
@@ -174,8 +177,10 @@ app.get('/api/products/featured', (_req, res) => {
       SELECT p.*, c.name as category_name, c.color as category_color
       FROM products p
       JOIN categories c ON p.category_id = c.id
-      WHERE p.featured = 1 AND COALESCE(p.status, 'disponible') = 'disponible'
-      ORDER BY p.id DESC
+      WHERE p.featured = 1
+      ORDER BY
+        CASE WHEN COALESCE(p.status, 'disponible') = 'disponible' THEN 0 ELSE 1 END,
+        p.id DESC
       LIMIT 8
     `)
     .all();
@@ -308,7 +313,7 @@ app.delete('/api/products/:id', checkAdmin, (req, res) => {
 app.get('/api/products/:id', (req, res) => {
   const product = db
     .prepare(`
-      SELECT p.*, c.name as category_name
+      SELECT p.*, c.name as category_name, c.color as category_color, c.icon as category_icon
       FROM products p
       JOIN categories c ON p.category_id = c.id
       WHERE p.id = ?
@@ -439,9 +444,11 @@ app.post('/api/upload', checkAdmin, (req, res) => {
 app.get('/sitemap.xml', (req, res) => {
   const siteUrl = getSiteUrl(req);
   const categories = db.prepare('SELECT id FROM categories').all();
+  const products = db.prepare('SELECT id FROM products').all();
   const urls = [
     '',
     ...categories.map((c) => `/categorie/${c.id}`),
+    ...products.map((p) => `/produit/${p.id}`),
   ];
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>

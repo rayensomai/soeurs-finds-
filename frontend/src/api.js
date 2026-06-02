@@ -22,6 +22,13 @@ export async function fetchFeaturedProducts() {
   return res.json();
 }
 
+export async function fetchProduct(id) {
+  const res = await fetch(`${API}/products/${id}`);
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error('Erreur chargement produit');
+  return res.json();
+}
+
 export async function createOrder({ product_id, prenom, nom, telephone }) {
   const res = await fetch(`${API}/orders`, {
     method: 'POST',

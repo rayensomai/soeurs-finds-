@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchCategories, fetchFeaturedProducts } from '../api';
 import ProductCard from '../components/ProductCard';
-import OrderModal from '../components/OrderModal';
 import { usePageMeta } from '../usePageMeta';
 
 export default function HomePage() {
@@ -15,7 +14,6 @@ export default function HomePage() {
   const [categories, setCategories] = useState([]);
   const [featured, setFeatured] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedProduct, setSelectedProduct] = useState(null);
 
   useEffect(() => {
     Promise.all([fetchCategories(), fetchFeaturedProducts()])
@@ -132,7 +130,6 @@ export default function HomePage() {
                   key={product.id}
                   product={product}
                   index={i}
-                  onBuy={setSelectedProduct}
                 />
               ))}
             </div>
@@ -157,10 +154,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
-      {selectedProduct && (
-        <OrderModal product={selectedProduct} onClose={() => setSelectedProduct(null)} />
-      )}
     </>
   );
 }

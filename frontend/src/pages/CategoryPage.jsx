@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { fetchCategories, fetchProductsByCategory } from '../api';
 import ProductCard from '../components/ProductCard';
-import OrderModal from '../components/OrderModal';
 import { usePageMeta } from '../usePageMeta';
 
 export default function CategoryPage() {
@@ -10,7 +9,6 @@ export default function CategoryPage() {
   const [category, setCategory] = useState(null);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedProduct, setSelectedProduct] = useState(null);
 
   usePageMeta(
     category
@@ -100,16 +98,11 @@ export default function CategoryPage() {
                 key={product.id}
                 product={{ ...product, category_name: category.name, category_color: category.color }}
                 index={i}
-                onBuy={setSelectedProduct}
               />
             ))}
           </div>
         )}
       </section>
-
-      {selectedProduct && (
-        <OrderModal product={selectedProduct} onClose={() => setSelectedProduct(null)} />
-      )}
     </>
   );
 }
