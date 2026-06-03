@@ -1,5 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import Logo from './Logo';
+import { SocialIconRow } from './SocialLinks';
 
 export default function Header() {
   const location = useLocation();
@@ -22,14 +23,7 @@ export default function Header() {
           >
             Accueil
           </Link>
-          <a
-            href="https://www.facebook.com/profile.php?id=61560521294412"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hidden rounded-full bg-[#1877F2] px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 sm:inline-flex"
-          >
-            Facebook
-          </a>
+          <SocialIconRow />
           <Link
             to="/admin"
             className="rounded-full px-4 py-2 text-sm font-medium text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700"

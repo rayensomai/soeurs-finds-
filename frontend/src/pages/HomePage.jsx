@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchCategories, fetchFeaturedProducts } from '../api';
 import ProductCard from '../components/ProductCard';
+import { SocialButtonsRow } from '../components/SocialLinks';
 import { usePageMeta } from '../usePageMeta';
 
 export default function HomePage() {
@@ -52,14 +53,7 @@ export default function HomePage() {
               <a href="#categories" className="btn-primary">
                 Explorer les catégories
               </a>
-              <a
-                href="https://www.facebook.com/profile.php?id=61560521294412"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn-outline"
-              >
-                Voir notre page Facebook
-              </a>
+              <SocialButtonsRow />
             </div>
           </div>
         </div>
